@@ -1,0 +1,96 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/agl/ed25519",
+			"repository": "https://github.com/agl/ed25519",
+			"revision": "278e1ec8e8a6e017cd07577924d6766039146ced",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/brutella/hc",
+			"repository": "https://github.com/brutella/hc",
+			"revision": "6f71e9ea5c63315666cb95b8a4756a5718d39ac4",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/brutella/log",
+			"repository": "https://github.com/brutella/log",
+			"revision": "4f6ff0661a5e6af8856e018841cd275e7121f8bf",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/codahale/chacha20",
+			"repository": "https://github.com/codahale/chacha20",
+			"revision": "ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/gosexy/to",
+			"repository": "https://github.com/gosexy/to",
+			"revision": "c20e083e31230b84ffa23c5d2fb0bc55f5292681",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/miekg/dns",
+			"repository": "https://github.com/miekg/dns",
+			"revision": "75e6e86cc601825c5dbcd4e0c209eab180997cd7",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/oleksandr/bonjour",
+			"repository": "https://github.com/oleksandr/bonjour",
+			"revision": "415cafc6ab8894ea7b7bcbed933ce2d8c611683c",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/tadglines/go-pkgs/crypto/srp",
+			"repository": "https://github.com/tadglines/go-pkgs",
+			"revision": "1f86682992f1a784aa7592b2be0ae80f194b2479",
+			"branch": "master",
+			"path": "/crypto/srp"
+		},
+		{
+			"importpath": "golang.org/x/crypto/curve25519",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "f18420efc3b4f8e9f3d51f6bd2476e92c46260e9",
+			"branch": "master",
+			"path": "/curve25519"
+		},
+		{
+			"importpath": "golang.org/x/crypto/hkdf",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "f18420efc3b4f8e9f3d51f6bd2476e92c46260e9",
+			"branch": "master",
+			"path": "/hkdf"
+		},
+		{
+			"importpath": "golang.org/x/crypto/poly1305",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "f18420efc3b4f8e9f3d51f6bd2476e92c46260e9",
+			"branch": "master",
+			"path": "/poly1305"
+		},
+		{
+			"importpath": "golang.org/x/net/internal/iana",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "28273ec927bee3bea305f112fc28ceee575ea893",
+			"branch": "master",
+			"path": "/internal/iana"
+		},
+		{
+			"importpath": "golang.org/x/net/ipv4",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "28273ec927bee3bea305f112fc28ceee575ea893",
+			"branch": "master",
+			"path": "/ipv4"
+		},
+		{
+			"importpath": "golang.org/x/net/ipv6",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "28273ec927bee3bea305f112fc28ceee575ea893",
+			"branch": "master",
+			"path": "/ipv6"
+		}
+	]
+}
