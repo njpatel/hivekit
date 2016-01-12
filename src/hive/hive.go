@@ -8,11 +8,11 @@ import (
 	"net/url"
 )
 
-const (
-	//loginURL   = "https://api.hivehome.com/v5/login"
-	loginURL   = "https://api-hivehome-com-k2b7u8lhpl4e.runscope.net/v5/login"
-	baseHeader = "x-governess-endpoint"
-)
+const baseHeader = "x-governess-endpoint"
+
+// Is var for tests
+// loginURL = "https://api.hivehome.com/v5/login"
+var loginURL = "https://api-hivehome-com-k2b7u8lhpl4e.runscope.net/v5/login"
 
 // Config holds configuration information for the Hive connection
 type Config struct {
@@ -43,7 +43,7 @@ func Connect(config Config) (*Hive, error) {
 	var reply loginReply
 	err = decoder.Decode(&reply)
 
-	if err != nil {
+	if err != nil && res.StatusCode == http.StatusOK {
 		return nil, fmt.Errorf("Unable to login: %s", err)
 	}
 
@@ -56,7 +56,6 @@ func Connect(config Config) (*Hive, error) {
 	}
 
 	baseURL := res.Header.Get(baseHeader)
-	fmt.Println("hello", baseURL, reply.Token)
 
 	return &Hive{
 		config:  config,

@@ -26,6 +26,13 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/davecgh/go-spew/spew",
+			"repository": "https://github.com/davecgh/go-spew",
+			"revision": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d",
+			"branch": "master",
+			"path": "/spew"
+		},
+		{
 			"importpath": "github.com/gosexy/to",
 			"repository": "https://github.com/gosexy/to",
 			"revision": "c20e083e31230b84ffa23c5d2fb0bc55f5292681",
@@ -42,6 +49,34 @@
 			"repository": "https://github.com/oleksandr/bonjour",
 			"revision": "415cafc6ab8894ea7b7bcbed933ce2d8c611683c",
 			"branch": "master"
+		},
+		{
+			"importpath": "github.com/pmezard/go-difflib/difflib",
+			"repository": "https://github.com/pmezard/go-difflib",
+			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
+			"branch": "master",
+			"path": "/difflib"
+		},
+		{
+			"importpath": "github.com/stretchr/testify/assert",
+			"repository": "https://github.com/stretchr/testify",
+			"revision": "f390dcf405f7b83c997eac1b06768bb9f44dec18",
+			"branch": "master",
+			"path": "/assert"
+		},
+		{
+			"importpath": "github.com/stretchr/testify/require",
+			"repository": "https://github.com/stretchr/testify",
+			"revision": "f390dcf405f7b83c997eac1b06768bb9f44dec18",
+			"branch": "master",
+			"path": "/require"
+		},
+		{
+			"importpath": "github.com/stretchr/testify/suite",
+			"repository": "https://github.com/stretchr/testify",
+			"revision": "f390dcf405f7b83c997eac1b06768bb9f44dec18",
+			"branch": "master",
+			"path": "/suite"
 		},
 		{
 			"importpath": "github.com/tadglines/go-pkgs/crypto/srp",
