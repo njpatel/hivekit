@@ -1,7 +1,16 @@
 package main
 
-import "hive"
+import (
+	"fmt"
+	"os"
+
+	"hive"
+)
 
 func main() {
-	hive.Hi()
+	_, err := hive.Connect(hive.Config{
+		Username: os.Getenv("HIVE_USER"),
+		Password: os.Getenv("HIVE_PASS"),
+	})
+	fmt.Println(err)
 }
