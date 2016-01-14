@@ -12,7 +12,7 @@ func main() {
 	_, err := hive.Connect(hive.Config{
 		Username:        os.Getenv("HIVE_USER"),
 		Password:        os.Getenv("HIVE_PASS"),
-		RefreshInterval: 10 * time.Second,
+		RefreshInterval: 60 * time.Second,
 	})
 
 	if err != nil {

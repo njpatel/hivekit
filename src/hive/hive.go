@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -17,7 +19,7 @@ const baseHeader = "x-governess-endpoint"
 var (
 	defaultRefreshInterval = 60 * time.Second
 	avoidRetrySeconds      = int64(10)
-	loginURL               = "https://api-hivehome-com-k2b7u8lhpl4e.runscope.net/v5/login"
+	loginURL               = "https://api.hivehome.com/v5/login"
 )
 
 // Config holds configuration information for the Hive connection
@@ -33,6 +35,7 @@ type Hive struct {
 
 	ticker      *time.Ticker
 	lastRefresh int64 // epoch
+	refreshing  sync.Mutex
 
 	token   string
 	baseURL string
@@ -40,13 +43,29 @@ type Hive struct {
 
 // Connect initiates the communication with the Hive Home web service
 func Connect(config Config) (*Hive, error) {
+
+	h := &Hive{
+		config: config,
+	}
+
+	err := h.login()
+	if err != nil {
+		return nil, err
+	}
+
+	go h.startPolling()
+
+	return h, nil
+}
+
+func (h *Hive) login() error {
 	values := url.Values{}
-	values.Set("username", config.Username)
-	values.Set("password", config.Password)
+	values.Set("username", h.config.Username)
+	values.Set("password", h.config.Password)
 
 	res, err := http.PostForm(loginURL, values)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to login: %s", err)
+		return fmt.Errorf("Unable to login: %s", err)
 	}
 
 	decoder := json.NewDecoder(res.Body)
@@ -54,26 +73,21 @@ func Connect(config Config) (*Hive, error) {
 	err = decoder.Decode(&reply)
 
 	if err != nil && res.StatusCode == http.StatusOK {
-		return nil, fmt.Errorf("Unable to login: %s", err)
+		return fmt.Errorf("Unable to login: %s", err)
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to login: Incorrect status code %s: %s", res.Status, reply.Error.Reason)
+		return fmt.Errorf("Unable to login: Incorrect status code %s: %s", res.Status, reply.Error.Reason)
 	}
 
 	if reply.Token == "" {
-		return nil, errors.New("Unable to login: Invalid session token returned")
+		return errors.New("Unable to login: Invalid session token returned")
 	}
 
-	h := &Hive{
-		config:  config,
-		token:   reply.Token,
-		baseURL: "https://" + strings.Split(res.Header.Get(baseHeader), ":")[0],
-	}
+	h.baseURL = "https://" + strings.Split(res.Header.Get(baseHeader), ":")[0]
+	h.token = reply.Token
 
-	go h.startPolling()
-
-	return h, nil
+	return nil
 }
 
 func (h *Hive) startPolling() {
@@ -90,20 +104,15 @@ func (h *Hive) startPolling() {
 }
 
 func (h *Hive) getStatus() {
+	h.refreshing.Lock()
+	defer h.refreshing.Unlock()
+
 	now := time.Now().Unix()
 	if h.lastRefresh > now-avoidRetrySeconds {
 		return
 	}
 
-	h.lastRefresh = now
-
-	req, err := http.NewRequest("GET", h.baseURL+"/omnia/nodes", nil)
-	req.Header.Add("X-Omnia-Access-Token", h.token)
-	req.Header.Add("Accept", "application/vnd.alertme.zoo-6.1+json")
-	req.Header.Add("X-Omnia-Client", "HiveKit")
-
-	client := &http.Client{}
-	res, err := client.Do(req)
+	res, err := h.getHTTP(h.baseURL+"/omnia/nodes", nil)
 	if err != nil {
 		fmt.Printf("Unable to get nodes info: %s", err)
 		return
@@ -119,7 +128,35 @@ func (h *Hive) getStatus() {
 		return
 	}
 
-	for _, info := range reply.Nodes {
-		fmt.Println(info.ID)
+	state := newStateFromNodes(reply.Nodes)
+	if err != nil {
+		fmt.Printf("Unable to extract state from reply: %s", err)
+		return
 	}
+
+	fmt.Printf("%v\n", state.CurrentTemp)
+
+	h.lastRefresh = now
+}
+
+func (h *Hive) getHTTP(url string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("GET", url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("X-Omnia-Access-Token", h.token)
+	req.Header.Add("Accept", "application/vnd.alertme.zoo-6.1+json")
+	req.Header.Add("X-Omnia-Client", "HiveKit")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+
+	// It's possible our token is no longer valid
+	if res.StatusCode == http.StatusUnauthorized {
+		h.login()
+		req.Header.Set("X-Omnia-Access-Token", h.token)
+		res, err = client.Do(req)
+	}
+	return res, err
 }
