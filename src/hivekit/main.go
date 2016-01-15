@@ -113,6 +113,8 @@ func setupHive() {
 		accessoryUpdate.Lock()
 		defer accessoryUpdate.Unlock()
 
+		fmt.Println("Syncing status with HomeKit")
+
 		hotWaterSwitch.SetOn(state.HotWater)
 
 		heatingBoostSwitch.SetOn(state.HeatingBoosted)

@@ -53,6 +53,7 @@ type Hive struct {
 	config Config
 
 	ticker      *time.Ticker
+	updateNow   chan bool
 	lastRefresh int64 // epoch
 	refreshing  sync.RWMutex
 
@@ -67,7 +68,8 @@ type Hive struct {
 func Connect(config Config) (*Hive, error) {
 
 	h := &Hive{
-		config: config,
+		config:    config,
+		updateNow: make(chan bool, 10),
 	}
 
 	err := h.login()
@@ -117,6 +119,12 @@ func (h *Hive) SetTargetTemp(temp float64) error {
 
 	state := h.GetState()
 	_, err = h.putHTTP("https://api-prod.bgchprod.info/omnia/nodes/"+state.heatingNodeID, body)
+
+	go (func() {
+		<-time.After(5 * time.Second)
+		h.updateNow <- true
+	})()
+
 	return err
 }
 
@@ -164,6 +172,12 @@ func (h *Hive) ToggleHotWater(on bool, onForLength time.Duration) error {
 
 	state := h.GetState()
 	_, err = h.putHTTP("https://api-prod.bgchprod.info/omnia/nodes/"+state.hotWaterNodeID, body)
+
+	go (func() {
+		<-time.After(5 * time.Second)
+		h.updateNow <- true
+	})()
+
 	return err
 }
 
@@ -205,6 +219,11 @@ func (h *Hive) ToggleHeatingBoost(on bool, duration time.Duration) error {
 
 	state := h.GetState()
 	_, err = h.putHTTP("https://api-prod.bgchprod.info/omnia/nodes/"+state.heatingNodeID, body)
+
+	go (func() {
+		<-time.After(5 * time.Second)
+		h.updateNow <- true
+	})()
 	return err
 }
 
@@ -246,19 +265,24 @@ func (h *Hive) startPolling() {
 	}
 
 	h.ticker = time.NewTicker(h.config.RefreshInterval)
-	go h.getStatus()
+	go h.getStatus(true)
 	for {
-		<-h.ticker.C
-		h.getStatus()
+		select {
+		case <-h.ticker.C:
+			h.getStatus(false)
+		case <-h.updateNow:
+			h.getStatus(true)
+		}
 	}
 }
 
-func (h *Hive) getStatus() {
+func (h *Hive) getStatus(force bool) {
+	fmt.Println("Refreshing status")
 	h.refreshing.Lock()
 	defer h.refreshing.Unlock()
 
 	now := time.Now().Unix()
-	if h.lastRefresh > now-avoidRetrySeconds {
+	if force == false && h.lastRefresh > now-avoidRetrySeconds {
 		return
 	}
 
@@ -315,7 +339,6 @@ func (h *Hive) getHTTP(url string, body io.Reader) (*http.Response, error) {
 }
 
 func (h *Hive) putHTTP(url string, body []byte) (*http.Response, error) {
-	fmt.Println(url, string(body))
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
