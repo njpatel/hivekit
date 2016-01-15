@@ -16,10 +16,12 @@ import (
 )
 
 var (
-	username string
-	password string
-	pin      string
-	verbose  bool
+	username         string
+	password         string
+	pin              string
+	boostDuration    int64
+	hotWaterDuration int64
+	verbose          bool
 
 	hiveHome *hive.Hive
 
@@ -35,6 +37,8 @@ func init() {
 	flag.StringVar(&password, "password", os.Getenv("HIVEKIT_PASS"), "Hive Home web service password")
 	flag.StringVar(&pin, "pin", os.Getenv("HIVEKIT_PIN"), "The HomeKit accessory pin (8 numeric chars)")
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose logging")
+	flag.Int64Var(&boostDuration, "boost-duration", 60, "Duration (minutes) to boost heating")
+	flag.Int64Var(&hotWaterDuration, "boost-water", 60, "Duration (minutes) to boost hot water")
 }
 
 func main() {
@@ -122,14 +126,14 @@ func setupHive() {
 }
 
 func modeForHiveMode(mode hive.HeatCoolMode) model.HeatCoolModeType {
-	/*	if mode == hive.HeatCoolModeOff {
+	if mode == hive.HeatCoolModeOff {
 		return model.HeatCoolModeOff
-	}*/
+	}
 	return model.HeatCoolModeAuto
 }
 
 func hotWaterStateChangeRequest(on bool) {
-	err := hiveHome.ToggleHotWater(on, time.Minute*60)
+	err := hiveHome.ToggleHotWater(on, time.Minute*time.Duration(hotWaterDuration))
 	if err != nil {
 		fmt.Printf("Unable to toggle hot water: %v\n", err)
 	}
@@ -147,7 +151,7 @@ func targetModeChangeRequest(hcMode model.HeatCoolModeType) {
 }
 
 func heatingBoostStateChangeRequest(on bool) {
-	err := hiveHome.ToggleHeatingBoost(on, time.Minute*60)
+	err := hiveHome.ToggleHeatingBoost(on, time.Minute*time.Duration(boostDuration))
 	if err != nil {
 		fmt.Printf("Unable to set heating boost: %v\n", err)
 	}
