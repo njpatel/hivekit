@@ -7,12 +7,29 @@ package hive
 type State struct {
 	Heating        bool /* True: On, False: Off */
 	HeatingBoosted bool
-	CurrentTemp    float32 /* Celcius */
-	TargetTemp     float32
+
+	CurrentHeatingMode HeatCoolMode
+	TargetHeatingMode  HeatCoolMode
+
+	CurrentTemp float64 /* Celcius */
+	TargetTemp  float64
 
 	HotWater        bool /* True: On, False: Guess */
 	HotWaterBoosted bool
+
+	heatingNodeID  string
+	hotWaterNodeID string
 }
+
+// HeatCoolMode is the mode of the Hive Home unit
+type HeatCoolMode int
+
+// HeatCoolModeOff ...
+const (
+	HeatCoolModeOff HeatCoolMode = iota
+	HeatCoolModeHeating
+	HeatCoolModeScheduled
+)
 
 func newStateFromNodes(nodes []nodeInfo) *State {
 	state := &State{}
@@ -20,25 +37,43 @@ func newStateFromNodes(nodes []nodeInfo) *State {
 		attrs := info.Attributes
 
 		if attrs.Temperature != nil && attrs.TargetHeatTemperature != nil {
+			state.heatingNodeID = info.ID
 			state.CurrentTemp = attrs.Temperature.ReportedValue
 			state.TargetTemp = attrs.TargetHeatTemperature.ReportedValue
 
 			if attrs.StateHeatingRelay != nil {
-				state.Heating = attrs.StateHeatingRelay.ReportedValue == "ON"
+				state.Heating = attrs.StateHeatingRelay.ReportedValue == apiOn
 			}
 
 			if attrs.ActiveHeatCoolMode != nil {
-				state.HeatingBoosted = attrs.ActiveHeatCoolMode.ReportedValue == "BOOST"
+				reported := attrs.ActiveHeatCoolMode.ReportedValue
+				state.HeatingBoosted = reported == apiBoost
+
+				state.CurrentHeatingMode = HeatCoolModeScheduled
+				if state.HeatingBoosted {
+					state.CurrentHeatingMode = HeatCoolModeHeating
+				} else if reported == apiOff {
+					state.CurrentHeatingMode = HeatCoolModeOff
+				}
+
+				state.TargetHeatingMode = HeatCoolModeScheduled
+				target := attrs.ActiveHeatCoolMode.TargetValue
+				if target == apiBoost {
+					state.TargetHeatingMode = HeatCoolModeHeating
+				} else if target == apiOff {
+					state.TargetHeatingMode = HeatCoolModeOff
+				}
 			}
 		}
 
 		if attrs.SupportsHotWater != nil && attrs.SupportsHotWater.ReportedValue == true {
+			state.hotWaterNodeID = info.ID
 			if attrs.StateHotWaterRelay != nil {
-				state.HotWater = attrs.StateHotWaterRelay.ReportedValue == "ON"
+				state.HotWater = attrs.StateHotWaterRelay.ReportedValue == apiOn
 			}
 
 			if attrs.ActiveHeatCoolMode != nil {
-				state.HotWaterBoosted = attrs.ActiveHeatCoolMode.ReportedValue == "BOOST"
+				state.HotWaterBoosted = attrs.ActiveHeatCoolMode.ReportedValue == apiBoost
 			}
 		}
 

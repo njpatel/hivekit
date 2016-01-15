@@ -14,6 +14,20 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/brutella/hc/model",
+			"repository": "https://github.com/brutella/hc",
+			"revision": "6f71e9ea5c63315666cb95b8a4756a5718d39ac4",
+			"branch": "master",
+			"path": "/model"
+		},
+		{
+			"importpath": "github.com/brutella/hc/model/accessory",
+			"repository": "https://github.com/brutella/hc",
+			"revision": "6f71e9ea5c63315666cb95b8a4756a5718d39ac4",
+			"branch": "master",
+			"path": "/model/accessory"
+		},
+		{
 			"importpath": "github.com/brutella/log",
 			"repository": "https://github.com/brutella/log",
 			"revision": "4f6ff0661a5e6af8856e018841cd275e7121f8bf",

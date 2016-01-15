@@ -1,5 +1,12 @@
 package hive
 
+const (
+	apiOff   = "OFF"
+	apiOn    = "ON"
+	apiBoost = "BOOST"
+	apiHeat  = "HEAT"
+)
+
 type errorReply struct {
 	Reason string
 }
@@ -10,35 +17,43 @@ type loginReply struct {
 }
 
 type nodesReply struct {
-	Nodes []nodeInfo
+	Nodes []nodeInfo `json:"nodes"`
 }
 
 type nodeInfo struct {
 	ID         string
 	Href       string
 	LastSeen   int64
-	Attributes nodeAttributes
+	Attributes nodeAttributes `json:"attributes"`
 }
 
 type nodeAttributes struct {
-	Temperature           *nodeReportFloat
-	SupportsHotWater      *nodeReportBool
-	StateHotWaterRelay    *nodeReportString
-	StateHeatingRelay     *nodeReportString
-	ActiveHeatCoolMode    *nodeReportString
-	TargetHeatTemperature *nodeReportFloat
+	ActiveHeatCoolMode    *nodeReportString `json:"activeHeatCoolMode,omitempty"`
+	ActiveScheduleLock    *nodeReportBool   `json:"activeScheduleLock,omitempty"`
+	ScheduleLockDuration  *nodeReportInt    `json:"scheduleLockDuration,omitempty"`
+	StateHeatingRelay     *nodeReportString `json:",omitempty"`
+	StateHotWaterRelay    *nodeReportString `json:",omitempty"`
+	SupportsHotWater      *nodeReportBool   `json:",omitempty"`
+	TargetHeatTemperature *nodeReportFloat  `json:"targetHeatTemperature,omitempty"`
+	Temperature           *nodeReportFloat  `json:",omitempty"`
 }
 
 type nodeReportFloat struct {
-	ReportedValue float32
-	TargetValue   float32
+	ReportedValue float64 `json:",omitempty"`
+	TargetValue   float64 `json:"targetValue"`
 }
 
 type nodeReportBool struct {
-	ReportedValue bool
+	ReportedValue bool `json:",omitempty"`
+	TargetValue   bool `json:"targetValue"`
 }
 
 type nodeReportString struct {
-	ReportedValue string
-	TargetValue   string
+	ReportedValue string `json:",omitempty"`
+	TargetValue   string `json:"targetValue"`
+}
+
+type nodeReportInt struct {
+	ReportedValue int32 `json:",omitempty"`
+	TargetValue   int32 `json:"targetValue"`
 }
