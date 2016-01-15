@@ -53,6 +53,7 @@ func setupHomeKit() {
 		Manufacturer: "British Gas PLC",
 	}
 	t := accessory.NewThermostat(tInfo, 20.0, hive.MinTemp, hive.MaxTemp, 0.5)
+	t.OnTargetTempChange(targetTempChangeRequest)
 	thermostat = t
 
 	sInfo := model.Info{
@@ -114,5 +115,12 @@ func hotWaterStateChangeRequest(on bool) {
 	err := hiveHome.ToggleHotWater(on, time.Minute*60)
 	if err != nil {
 		fmt.Printf("Unable to toggle hot water: %v\n", err)
+	}
+}
+
+func targetTempChangeRequest(temp float64) {
+	err := hiveHome.SetTargetTemp(temp)
+	if err != nil {
+		fmt.Printf("Unable to set target temperature: %v\n", err)
 	}
 }

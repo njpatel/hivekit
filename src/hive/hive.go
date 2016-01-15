@@ -97,8 +97,27 @@ func (h *Hive) GetState() (s State) {
 }
 
 // SetTargetTemp sets the desired temperature on the Hive. If the Hive heating mode is set to
-func (h *Hive) SetTargetTemp(temp float64) {
+func (h *Hive) SetTargetTemp(temp float64) error {
+	nodes := nodesReply{
+		Nodes: []nodeInfo{
+			nodeInfo{
+				Attributes: nodeAttributes{
+					TargetHeatTemperature: &nodeReportFloat{
+						TargetValue: temp,
+					},
+				},
+			},
+		},
+	}
 
+	body, err := json.Marshal(nodes)
+	if err != nil {
+		return err
+	}
+
+	state := h.GetState()
+	_, err = h.putHTTP("https://api-prod.bgchprod.info/omnia/nodes/"+state.heatingNodeID, body)
+	return err
 }
 
 // SetTargetHeatCoolMode sets the desired heating mode on the Hive
