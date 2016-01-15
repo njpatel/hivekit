@@ -167,6 +167,47 @@ func (h *Hive) ToggleHotWater(on bool, onForLength time.Duration) error {
 	return err
 }
 
+// ToggleHeatingBoost will switch on or off the heating boost for the duration
+func (h *Hive) ToggleHeatingBoost(on bool, duration time.Duration) error {
+	var info nodeInfo
+	if on == true {
+		info = nodeInfo{
+			Attributes: nodeAttributes{
+				ActiveHeatCoolMode: &nodeReportString{
+					TargetValue: apiBoost,
+				},
+				ScheduleLockDuration: &nodeReportInt{
+					TargetValue: int32(duration.Minutes()),
+				},
+			},
+		}
+	} else {
+		info = nodeInfo{
+			Attributes: nodeAttributes{
+				ActiveHeatCoolMode: &nodeReportString{
+					TargetValue: apiHeat,
+				},
+				ActiveScheduleLock: &nodeReportBool{
+					TargetValue: false,
+				},
+			},
+		}
+	}
+
+	nodes := nodesReply{
+		Nodes: []nodeInfo{info},
+	}
+
+	body, err := json.Marshal(nodes)
+	if err != nil {
+		return err
+	}
+
+	state := h.GetState()
+	_, err = h.putHTTP("https://api-prod.bgchprod.info/omnia/nodes/"+state.heatingNodeID, body)
+	return err
+}
+
 func (h *Hive) login() error {
 	values := url.Values{}
 	values.Set("username", h.config.Username)

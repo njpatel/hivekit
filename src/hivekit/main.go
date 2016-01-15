@@ -23,10 +23,11 @@ var (
 
 	hiveHome *hive.Hive
 
-	thermostat      model.Thermostat
-	hotWaterSwitch  model.Switch
-	transport       hap.Transport
-	accessoryUpdate sync.Mutex
+	thermostat         model.Thermostat
+	hotWaterSwitch     model.Switch
+	heatingBoostSwitch model.Switch
+	transport          hap.Transport
+	accessoryUpdate    sync.Mutex
 )
 
 func init() {
@@ -63,6 +64,14 @@ func setupHomeKit() {
 	t.OnTargetModeChange(targetModeChangeRequest)
 	thermostat = t
 
+	bInfo := model.Info{
+		Name:         "Heating Boost",
+		Manufacturer: "British Gas PLC",
+	}
+	b := accessory.NewSwitch(bInfo)
+	b.OnStateChanged(heatingBoostStateChangeRequest)
+	heatingBoostSwitch = b
+
 	sInfo := model.Info{
 		Name:         "Hot Water",
 		Manufacturer: "British Gas PLC",
@@ -76,7 +85,7 @@ func setupHomeKit() {
 	}
 
 	var err error
-	transport, err = hap.NewIPTransport(config, a, t.Accessory, h.Accessory)
+	transport, err = hap.NewIPTransport(config, a, t.Accessory, b.Accessory, h.Accessory)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,6 +110,8 @@ func setupHive() {
 		defer accessoryUpdate.Unlock()
 
 		hotWaterSwitch.SetOn(state.HotWater)
+
+		heatingBoostSwitch.SetOn(state.HeatingBoosted)
 
 		thermostat.SetTemperature(state.CurrentTemp)
 		thermostat.SetTargetTemperature(state.TargetTemp)
@@ -133,4 +144,11 @@ func targetTempChangeRequest(temp float64) {
 
 func targetModeChangeRequest(hcMode model.HeatCoolModeType) {
 	fmt.Printf("Chaning target mode is unsupported at this time")
+}
+
+func heatingBoostStateChangeRequest(on bool) {
+	err := hiveHome.ToggleHeatingBoost(on, time.Minute*60)
+	if err != nil {
+		fmt.Printf("Unable to set heating boost: %v\n", err)
+	}
 }
