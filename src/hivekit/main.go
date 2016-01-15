@@ -48,12 +48,19 @@ func main() {
 }
 
 func setupHomeKit() {
+	aInfo := model.Info{
+		Name:         "Hive Bridge",
+		Manufacturer: "British Gas PLC",
+	}
+	a := accessory.New(aInfo)
+
 	tInfo := model.Info{
 		Name:         "Heating",
 		Manufacturer: "British Gas PLC",
 	}
 	t := accessory.NewThermostat(tInfo, 20.0, hive.MinTemp, hive.MaxTemp, 0.5)
 	t.OnTargetTempChange(targetTempChangeRequest)
+	t.OnTargetModeChange(targetModeChangeRequest)
 	thermostat = t
 
 	sInfo := model.Info{
@@ -69,7 +76,7 @@ func setupHomeKit() {
 	}
 
 	var err error
-	transport, err = hap.NewIPTransport(config, t.Accessory, h.Accessory)
+	transport, err = hap.NewIPTransport(config, a, t.Accessory, h.Accessory)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,7 +88,7 @@ func setupHive() {
 	hiveHome, err = hive.Connect(hive.Config{
 		Username:        username,
 		Password:        password,
-		RefreshInterval: 60 * time.Second,
+		RefreshInterval: 30 * time.Second,
 	})
 
 	if err != nil {
@@ -98,16 +105,15 @@ func setupHive() {
 		thermostat.SetTemperature(state.CurrentTemp)
 		thermostat.SetTargetTemperature(state.TargetTemp)
 		thermostat.SetMode(modeForHiveMode(state.CurrentHeatingMode))
+		thermostat.SetMode(model.HeatCoolModeAuto)
 		thermostat.SetTargetMode(modeForHiveMode(state.TargetHeatingMode))
 	})
 }
 
 func modeForHiveMode(mode hive.HeatCoolMode) model.HeatCoolModeType {
-	if mode == hive.HeatCoolModeOff {
+	/*	if mode == hive.HeatCoolModeOff {
 		return model.HeatCoolModeOff
-	} else if mode == hive.HeatCoolModeHeating {
-		return model.HeatCoolModeHeat
-	}
+	}*/
 	return model.HeatCoolModeAuto
 }
 
@@ -123,4 +129,8 @@ func targetTempChangeRequest(temp float64) {
 	if err != nil {
 		fmt.Printf("Unable to set target temperature: %v\n", err)
 	}
+}
+
+func targetModeChangeRequest(hcMode model.HeatCoolModeType) {
+	fmt.Printf("Chaning target mode is unsupported at this time")
 }

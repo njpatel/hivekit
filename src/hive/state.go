@@ -50,17 +50,13 @@ func newStateFromNodes(nodes []nodeInfo) *State {
 				state.HeatingBoosted = reported == apiBoost
 
 				state.CurrentHeatingMode = HeatCoolModeScheduled
-				if state.HeatingBoosted {
-					state.CurrentHeatingMode = HeatCoolModeHeating
-				} else if reported == apiOff {
+				if reported == apiOff {
 					state.CurrentHeatingMode = HeatCoolModeOff
 				}
 
 				state.TargetHeatingMode = HeatCoolModeScheduled
 				target := attrs.ActiveHeatCoolMode.TargetValue
-				if target == apiBoost {
-					state.TargetHeatingMode = HeatCoolModeHeating
-				} else if target == apiOff {
+				if target == apiOff {
 					state.TargetHeatingMode = HeatCoolModeOff
 				}
 			}

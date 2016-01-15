@@ -120,9 +120,10 @@ func (h *Hive) SetTargetTemp(temp float64) error {
 	return err
 }
 
-// SetTargetHeatCoolMode sets the desired heating mode on the Hive
-func (h *Hive) SetTargetHeatCoolMode(mode HeatCoolMode) {
-
+// SetTargetHeatMode sets the desired heating mode on the Hive
+func (h *Hive) SetTargetHeatMode(mode HeatCoolMode) error {
+	fmt.Printf("New mode: %v\n", mode)
+	return nil
 }
 
 // ToggleHotWater either boosts the hotwater for a duration, or restores it to automatic mode
