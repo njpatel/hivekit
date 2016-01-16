@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -32,12 +31,12 @@ const (
 	MaxTemp = 32.0
 )
 
-// Is var for tests
-// loginURL = "https://api.hivehome.com/v5/login"
+// Some are var for tests
 var (
 	defaultRefreshInterval = 60 * time.Second
 	avoidRetrySeconds      = int64(10)
 	loginURL               = "https://api.hivehome.com/v5/login"
+	nodeURL                = "https://api-prod.bgchprod.info/omnia/nodes/"
 )
 
 // Config holds configuration information for the Hive connection
@@ -120,7 +119,7 @@ func (h *Hive) SetTargetTemp(temp float64) error {
 	}
 
 	state := h.GetState()
-	_, err = h.putHTTP("https://api-prod.bgchprod.info/omnia/nodes/"+state.heatingNodeID, body)
+	_, err = h.putHTTP(nodeURL+state.heatingNodeID, body)
 
 	go (func() {
 		<-time.After(5 * time.Second)
@@ -173,7 +172,7 @@ func (h *Hive) ToggleHotWater(on bool, onForLength time.Duration) error {
 	}
 
 	state := h.GetState()
-	_, err = h.putHTTP("https://api-prod.bgchprod.info/omnia/nodes/"+state.hotWaterNodeID, body)
+	_, err = h.putHTTP(nodeURL+state.hotWaterNodeID, body)
 
 	go (func() {
 		<-time.After(5 * time.Second)
@@ -220,7 +219,7 @@ func (h *Hive) ToggleHeatingBoost(on bool, duration time.Duration) error {
 	}
 
 	state := h.GetState()
-	_, err = h.putHTTP("https://api-prod.bgchprod.info/omnia/nodes/"+state.heatingNodeID, body)
+	_, err = h.putHTTP(nodeURL+state.heatingNodeID, body)
 
 	go (func() {
 		<-time.After(5 * time.Second)
@@ -288,7 +287,7 @@ func (h *Hive) getStatus(force bool) {
 		return
 	}
 
-	res, err := h.getHTTP(h.baseURL+"/omnia/nodes", nil)
+	res, err := h.getHTTP(h.baseURL + "/omnia/nodes")
 	if err != nil {
 		log.Printf("[WARN] Unable to get nodes info: %s", err)
 		return
@@ -318,8 +317,8 @@ func (h *Hive) getStatus(force bool) {
 	h.lastRefresh = now
 }
 
-func (h *Hive) getHTTP(url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, body)
+func (h *Hive) getHTTP(url string) (*http.Response, error) {
+	req, err := h.createGetRequest(url)
 	if err != nil {
 		return nil, err
 	}
@@ -334,14 +333,14 @@ func (h *Hive) getHTTP(url string, body io.Reader) (*http.Response, error) {
 	// It's possible our token is no longer valid
 	if res != nil && res.StatusCode == http.StatusUnauthorized {
 		h.login()
-		req.Header.Set("X-Omnia-Access-Token", h.token)
+		req, _ := h.createGetRequest(url)
 		res, err = client.Do(req)
 	}
 	return res, err
 }
 
-func (h *Hive) putHTTP(url string, body []byte) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(body))
+func (h *Hive) createGetRequest(url string) (*http.Request, error) {
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +348,14 @@ func (h *Hive) putHTTP(url string, body []byte) (*http.Response, error) {
 	req.Header.Add(omniaAccessTokenHdr, h.token)
 	req.Header.Add(httpAcceptHdr, "application/vnd.alertme.zoo-6.1+json")
 	req.Header.Add(omniaClientHdr, "HiveKit")
-	req.Header.Add(httpContentHdr, "application/json")
+	return req, nil
+}
+
+func (h *Hive) putHTTP(url string, body []byte) (*http.Response, error) {
+	req, err := h.createPutRequest(url, body)
+	if err != nil {
+		return nil, err
+	}
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // Bad Hive!
@@ -362,8 +368,22 @@ func (h *Hive) putHTTP(url string, body []byte) (*http.Response, error) {
 	// It's possible our token is no longer valid
 	if res != nil && res.StatusCode == http.StatusUnauthorized {
 		h.login()
-		req.Header.Set("X-Omnia-Access-Token", h.token)
+		req, _ := h.createPutRequest(url, body)
 		res, err = client.Do(req)
 	}
 	return res, err
+}
+
+func (h *Hive) createPutRequest(url string, body []byte) (*http.Request, error) {
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add(omniaAccessTokenHdr, h.token)
+	req.Header.Add(httpAcceptHdr, "application/vnd.alertme.zoo-6.1+json")
+	req.Header.Add(omniaClientHdr, "HiveKit")
+	req.Header.Add(httpContentHdr, "application/json")
+
+	return req, nil
 }

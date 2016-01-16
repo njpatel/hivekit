@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/brutella/log"
 )
 
 type HiveTestSuite struct {
@@ -15,6 +17,7 @@ type HiveTestSuite struct {
 }
 
 func TestHiveTestSuite(t *testing.T) {
+	log.Verbose = false
 	suite.Run(t, new(HiveTestSuite))
 }
 
@@ -102,4 +105,64 @@ func (suite *HiveTestSuite) TestConnectFailedServer() {
 	})
 	assert.Nil(h)
 	assert.Contains(err.Error(), "Internal")
+}
+
+func (suite *HiveTestSuite) TestPut() {
+	assert := assert.New(suite.T())
+	token := "ofmyappreciation"
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(token, r.Header.Get(omniaAccessTokenHdr))
+		assert.NotEmpty(r.Header.Get(omniaClientHdr))
+		assert.NotEmpty(r.Header.Get(httpContentHdr))
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+
+	h := &Hive{
+		token: token,
+	}
+
+	b, _ := json.Marshal(nodeReportInt{TargetValue: 1})
+	res, err := h.putHTTP(ts.URL, b)
+	assert.NotNil(res)
+	assert.Nil(err)
+}
+
+func (suite *HiveTestSuite) TestPutRetries() {
+	assert := assert.New(suite.T())
+	token := "ofmyappreciation"
+	times := 0
+
+	lts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		str, _ := json.Marshal(loginReply{
+			Token: token,
+		})
+		w.Write(str)
+	}))
+	defer lts.Close()
+
+	loginURL = lts.URL
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		times++
+		if times == 1 {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		assert.Equal(token, r.Header.Get(omniaAccessTokenHdr))
+		assert.NotEmpty(r.Header.Get(omniaClientHdr))
+		assert.NotEmpty(r.Header.Get(httpContentHdr))
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+
+	h := &Hive{
+		token: token,
+	}
+
+	res, err := h.putHTTP(ts.URL, []byte{'h', 'e', 'l', 'l', 'o'})
+	assert.NotNil(res)
+	assert.Nil(err)
+	assert.Equal(2, times)
 }
