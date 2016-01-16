@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/brutella/log"
 )
 
 const (
@@ -130,7 +132,7 @@ func (h *Hive) SetTargetTemp(temp float64) error {
 
 // SetTargetHeatMode sets the desired heating mode on the Hive
 func (h *Hive) SetTargetHeatMode(mode HeatCoolMode) error {
-	fmt.Printf("New mode: %v\n", mode)
+	log.Printf("[INFO] Changing HeatCoolMode is unsupported at this time\n")
 	return nil
 }
 
@@ -277,7 +279,7 @@ func (h *Hive) startPolling() {
 }
 
 func (h *Hive) getStatus(force bool) {
-	fmt.Println("Refreshing status")
+	log.Printf("[VERB] Refreshing Hive status")
 	h.refreshing.Lock()
 	defer h.refreshing.Unlock()
 
@@ -288,7 +290,7 @@ func (h *Hive) getStatus(force bool) {
 
 	res, err := h.getHTTP(h.baseURL+"/omnia/nodes", nil)
 	if err != nil {
-		fmt.Printf("Unable to get nodes info: %s", err)
+		log.Printf("[WARN] Unable to get nodes info: %s", err)
 		return
 	}
 	defer res.Body.Close()
@@ -298,13 +300,13 @@ func (h *Hive) getStatus(force bool) {
 	err = decoder.Decode(&reply)
 
 	if err != nil {
-		fmt.Printf("Unable to get nodes info: %s", err)
+		log.Printf("[WARN] Unable to get nodes info: %s", err)
 		return
 	}
 
 	state := newStateFromNodes(reply.Nodes)
 	if err != nil {
-		fmt.Printf("Unable to extract state from reply: %s", err)
+		log.Printf("[WARN] Unable to extract state from reply: %s", err)
 		return
 	}
 

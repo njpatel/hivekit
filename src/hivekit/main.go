@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -113,7 +112,7 @@ func setupHive() {
 		accessoryUpdate.Lock()
 		defer accessoryUpdate.Unlock()
 
-		fmt.Println("Syncing status with HomeKit")
+		log.Printf("[VERB] Syncing status with HomeKit\n")
 
 		hotWaterSwitch.SetOn(state.HotWater)
 
@@ -137,24 +136,24 @@ func modeForHiveMode(mode hive.HeatCoolMode) model.HeatCoolModeType {
 func hotWaterStateChangeRequest(on bool) {
 	err := hiveHome.ToggleHotWater(on, time.Minute*time.Duration(hotWaterDuration))
 	if err != nil {
-		fmt.Printf("Unable to toggle hot water: %v\n", err)
+		log.Printf("[WARN] Unable to toggle hot water: %v\n", err)
 	}
 }
 
 func targetTempChangeRequest(temp float64) {
 	err := hiveHome.SetTargetTemp(temp)
 	if err != nil {
-		fmt.Printf("Unable to set target temperature: %v\n", err)
+		log.Printf("[WARN] Unable to set target temperature: %v\n", err)
 	}
 }
 
 func targetModeChangeRequest(hcMode model.HeatCoolModeType) {
-	fmt.Printf("Chaning target mode is unsupported at this time")
+	log.Printf("[Warn] Changing target mode is unsupported at this time")
 }
 
 func heatingBoostStateChangeRequest(on bool) {
 	err := hiveHome.ToggleHeatingBoost(on, time.Minute*time.Duration(boostDuration))
 	if err != nil {
-		fmt.Printf("Unable to set heating boost: %v\n", err)
+		log.Printf("[WARN] Unable to set heating boost: %v\n", err)
 	}
 }
