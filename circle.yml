@@ -1,0 +1,21 @@
+dependencies:
+  cache_directories:
+    - "~/go_workspace"
+  pre:
+    - wget https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz
+    - mkdir -p /home/ubuntu/go_workspace
+    - tar -C ~/ -xzf go1.5.1.linux-amd64.tar.gz
+  post:
+    - go get github.com/constabulary/gb/...
+    - make build-dep
+    - make vendor
+    
+machine:
+  environment:
+    PATH: /home/ubuntu/go/bin:/home/ubuntu/go_workspace/bin:$PATH
+    GOPATH: /home/ubuntu/go_workspace
+    GOROOT: /home/ubuntu/go
+
+test:
+  override:
+    - make test
