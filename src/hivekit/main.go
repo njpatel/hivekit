@@ -8,9 +8,9 @@ import (
 
 	"hive"
 
+	"github.com/brutella/hc/accessory"
+	"github.com/brutella/hc/characteristic"
 	"github.com/brutella/hc/hap"
-	"github.com/brutella/hc/model"
-	"github.com/brutella/hc/model/accessory"
 	"github.com/brutella/log"
 )
 
@@ -24,9 +24,9 @@ var (
 
 	hiveHome *hive.Hive
 
-	thermostat         model.Thermostat
-	hotWaterSwitch     model.Switch
-	heatingBoostSwitch model.Switch
+	thermostat         *accessory.Thermostat
+	hotWaterSwitch     *accessory.Switch
+	heatingBoostSwitch *accessory.Switch
 	transport          hap.Transport
 	accessoryUpdate    sync.Mutex
 )
@@ -52,35 +52,34 @@ func main() {
 }
 
 func setupHomeKit() {
-	aInfo := model.Info{
+	aInfo := accessory.Info{
 		Name:         "Hive Bridge",
 		Manufacturer: "British Gas PLC",
 	}
-	a := accessory.New(aInfo)
+	a := accessory.New(aInfo, accessory.TypeBridge)
 
-	tInfo := model.Info{
+	tInfo := accessory.Info{
 		Name:         "Heating",
 		Manufacturer: "British Gas PLC",
 	}
 	t := accessory.NewThermostat(tInfo, 20.0, hive.MinTemp, hive.MaxTemp, 0.5)
-	t.OnTargetTempChange(targetTempChangeRequest)
-	t.OnTargetModeChange(targetModeChangeRequest)
+	t.Thermostat.TargetTemperature.OnValueRemoteUpdate(targetTempChangeRequest)
 	thermostat = t
 
-	bInfo := model.Info{
+	bInfo := accessory.Info{
 		Name:         "Heating Boost",
 		Manufacturer: "British Gas PLC",
 	}
 	b := accessory.NewSwitch(bInfo)
-	b.OnStateChanged(heatingBoostStateChangeRequest)
+	b.Switch.On.OnValueRemoteUpdate(heatingBoostStateChangeRequest)
 	heatingBoostSwitch = b
 
-	sInfo := model.Info{
+	sInfo := accessory.Info{
 		Name:         "Hot Water",
 		Manufacturer: "British Gas PLC",
 	}
 	h := accessory.NewSwitch(sInfo)
-	h.OnStateChanged(hotWaterStateChangeRequest)
+	h.Switch.On.OnValueRemoteUpdate(hotWaterStateChangeRequest)
 	hotWaterSwitch = h
 
 	config := hap.Config{
@@ -114,23 +113,22 @@ func setupHive() {
 
 		log.Printf("[VERB] Syncing status with HomeKit\n")
 
-		hotWaterSwitch.SetOn(state.HotWater)
+		hotWaterSwitch.Switch.On.SetValue(state.HotWater)
 
-		heatingBoostSwitch.SetOn(state.HeatingBoosted)
+		heatingBoostSwitch.Switch.On.SetValue(state.HeatingBoosted)
 
-		thermostat.SetTemperature(state.CurrentTemp)
-		thermostat.SetTargetTemperature(state.TargetTemp)
-		thermostat.SetMode(modeForHiveMode(state.CurrentHeatingMode))
-		thermostat.SetMode(model.HeatCoolModeAuto)
-		thermostat.SetTargetMode(modeForHiveMode(state.TargetHeatingMode))
+		thermostat.Thermostat.CurrentTemperature.SetValue(state.CurrentTemp)
+		thermostat.Thermostat.TargetTemperature.SetValue(state.TargetTemp)
+		thermostat.Thermostat.CurrentHeatingCoolingState.SetValue(modeForHiveMode(state.CurrentHeatingMode))
+		thermostat.Thermostat.TargetHeatingCoolingState.SetValue(modeForHiveMode(state.TargetHeatingMode))
 	})
 }
 
-func modeForHiveMode(mode hive.HeatCoolMode) model.HeatCoolModeType {
+func modeForHiveMode(mode hive.HeatCoolMode) int {
 	if mode == hive.HeatCoolModeOff {
-		return model.HeatCoolModeOff
+		return characteristic.CurrentHeatingCoolingStateOff
 	}
-	return model.HeatCoolModeAuto
+	return characteristic.CurrentHeatingCoolingStateHeat
 }
 
 func hotWaterStateChangeRequest(on bool) {
@@ -145,10 +143,6 @@ func targetTempChangeRequest(temp float64) {
 	if err != nil {
 		log.Printf("[WARN] Unable to set target temperature: %v\n", err)
 	}
-}
-
-func targetModeChangeRequest(hcMode model.HeatCoolModeType) {
-	log.Printf("[Warn] Changing target mode is unsupported at this time")
 }
 
 func heatingBoostStateChangeRequest(on bool) {
