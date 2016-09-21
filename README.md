@@ -1,5 +1,14 @@
 # HiveKit [![Circle CI](https://circleci.com/gh/njpatel/hivekit.svg?style=svg)](https://circleci.com/gh/njpatel/hivekit)
 
+**NOTE**
+
+**The Hive Home service has moved onto a new API for their devices, HiveKit will no longer work.**
+
+**Please see [this issue](https://github.com/njpatel/hivekit/issues/7) for more details. Sorry for the inconvenience.**
+
+**/NOTE**
+
+
 HiveKit is a [HomeKit](https://developer.apple.com/homekit/) bridge to make the [Hive Active Heating](https://hivehome.com) system available as HomeKit accessories. This allows you to use your Hive with your iPhone, Apple Watch, and Siri.
 
 HiveKit is based on the excellent [HomeControl](https://github.com/brutella/hc) by [@brutella](https://twitter.com/brutella).
